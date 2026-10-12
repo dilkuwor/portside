@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Portside mark: split shield (two halves of a port) with three status dots -->
-  <path d="M27 9H17.5Q12 9 12 14.5V29Q12 45.5 27.5 55" stroke="#3b2a91" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M37 9H46.5Q52 9 52 14.5V29Q52 45.5 36.5 55" stroke="#8b5cf6" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="32" cy="21" r="3.6" fill="#60b8f0"/>
-  <circle cx="32" cy="31.5" r="3.6" fill="#8b5cf6"/>
-  <circle cx="32" cy="42" r="3.6" fill="#3b2a91"/>
-</svg>

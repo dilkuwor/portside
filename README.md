@@ -2,8 +2,6 @@
 
 A local admin dashboard that shows every app listening on a port on your Mac — and lets you stop it.
 
-![Portside logo](DESIGN/portside-logo.svg)
-
 ## Features
 
 - **Overview** — running apps, open ports, memory/CPU, memory-over-time chart, top memory users, and a "needs attention" panel (ports exposed to your network, heavy processes, forgotten dev servers)
