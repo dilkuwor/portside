@@ -7,8 +7,11 @@ import { fileURLToPath } from "node:url";
 import os from "node:os";
 
 const run = promisify(execFile);
-const PORT = Number(process.env.PORT) || 4999;
-const HOST = "127.0.0.1"; // never expose the kill endpoint to the network
+const PORT = Number(process.env.PORT) || 80;
+// Prefer loopback. macOS only lets non-root processes bind ports < 1024 on all
+// interfaces, so for :80 we fall back to 0.0.0.0 and drop non-local connections.
+const HOST = process.env.HOST || "127.0.0.1";
+const BASE_URL = `http://localhost${PORT === 80 ? "" : `:${PORT}`}`;
 const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), "public");
 
 // Paths that indicate an OS / desktop process rather than something you started in a terminal.
@@ -159,7 +162,8 @@ async function listApps() {
       .map(([port, hosts]) => ({
         port,
         hosts: [...hosts],
-        public: [...hosts].some((h) => h === "*" || h === "0.0.0.0" || h === "::"),
+        // Our own socket refuses non-local connections, so it is effectively local-only
+        public: pid !== process.pid && [...hosts].some((h) => h === "*" || h === "0.0.0.0" || h === "::"),
       }))
       .sort((a, b) => a.port - b.port);
 
@@ -200,14 +204,25 @@ async function readJson(req) {
   return JSON.parse(raw || "{}");
 }
 
+const LOCAL_HOSTS = ["localhost", "127.0.0.1", "[::1]"];
+const LOCAL_ORIGINS = LOCAL_HOSTS.flatMap((h) => [`http://${h}:${PORT}`, ...(PORT === 80 ? [`http://${h}`] : [])]);
+
 /** Block cross-site requests: only our own page may call the kill endpoint. */
 function isSameOrigin(req) {
   const origin = req.headers.origin;
-  const allowed = [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`];
-  return (!origin || allowed.includes(origin)) && req.headers["content-type"]?.startsWith("application/json");
+  return (!origin || LOCAL_ORIGINS.includes(origin)) && req.headers["content-type"]?.startsWith("application/json");
 }
 
+/** Reject requests addressed to any other hostname (DNS-rebinding protection). */
+function isLocalHost(req) {
+  const host = (req.headers.host || "").replace(/:\d+$/, "");
+  return LOCAL_HOSTS.includes(host);
+}
+
+const isLoopback = (addr) => addr === "127.0.0.1" || addr === "::1" || addr === "::ffff:127.0.0.1";
+
 const server = http.createServer(async (req, res) => {
+  if (!isLocalHost(req)) return send(res, 403, { error: "Forbidden host" });
   const url = new URL(req.url, `http://${req.headers.host}`);
   try {
     if (req.method === "GET" && url.pathname === "/api/apps") {
@@ -249,6 +264,20 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, HOST, () => {
-  console.log(`\n  ⚓ Portside running at http://localhost:${PORT}\n`);
+// Only this Mac may connect, even when bound to all interfaces
+server.on("connection", (socket) => {
+  if (!isLoopback(socket.remoteAddress)) socket.destroy();
 });
+
+function start(host) {
+  server.once("error", (err) => {
+    if (err.code === "EACCES" && host === "127.0.0.1") return start("0.0.0.0");
+    if (err.code === "EADDRINUSE") console.error(`\n  Port ${PORT} is already in use. Try: PORT=4999 npm start\n`);
+    else if (err.code === "EACCES") console.error(`\n  No permission to use port ${PORT}. Try: PORT=4999 npm start\n`);
+    else console.error(err);
+    process.exit(1);
+  });
+  server.listen(PORT, host);
+}
+server.once("listening", () => console.log(`\n  ⚓ Portside running at ${BASE_URL}\n`));
+start(HOST);

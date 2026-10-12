@@ -155,6 +155,7 @@
   /* Collapsed rail: icons only, labels move into tooltips */
   @media (min-width: 961px) {
     .shell.collapsed .brand { padding: 0; justify-content: center; }
+    .shell.collapsed .kinds-label, .shell.collapsed .kind-filter { display: none; }
     .shell.collapsed .brand-text, .shell.collapsed .sidebar .lbl, .shell.collapsed .sidebar .count, .shell.collapsed .machine { display: none; }
     .shell.collapsed .nav-label { font-size: 0; height: 1px; padding: 0; margin: 12px 8px; background: var(--border); }
     .shell.collapsed .nav a, .shell.collapsed .kind-filter button { justify-content: center; padding: 10px 0; }
@@ -461,7 +462,7 @@
     <div class="nav-label">Monitor</div>
     <nav class="nav" id="nav"></nav>
 
-    <div class="nav-label">Filter by type</div>
+    <div class="nav-label kinds-label">Filter by type</div>
     <div class="kind-filter" id="kinds"></div>
 
     <div class="sidebar-foot">
