@@ -1,0 +1,10 @@
+{
+  "name": "portside",
+  "version": "1.0.0",
+  "description": "Portside — see every app listening on a port and stop it",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

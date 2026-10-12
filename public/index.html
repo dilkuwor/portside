@@ -1,0 +1,1274 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Portside</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'%3E %3Cpath d='M27 9H17.5Q12 9 12 14.5V29Q12 45.5 27.5 55' stroke='%233b2a91' stroke-width='6.5' stroke-linecap='round' stroke-linejoin='round'/%3E %3Cpath d='M37 9H46.5Q52 9 52 14.5V29Q52 45.5 36.5 55' stroke='%238b5cf6' stroke-width='6.5' stroke-linecap='round' stroke-linejoin='round'/%3E %3Ccircle cx='32' cy='21' r='3.6' fill='%2360b8f0'/%3E %3Ccircle cx='32' cy='31.5' r='3.6' fill='%238b5cf6'/%3E %3Ccircle cx='32' cy='42' r='3.6' fill='%233b2a91'/%3E %3C/svg%3E" />
+<script>
+  // Saved choice wins; otherwise follow the OS setting (set before paint to avoid a flash)
+  document.documentElement.dataset.theme =
+    localStorage.getItem("theme") || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+</script>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --surface: #12151c;
+    --surface-2: #181c25;
+    --hover: rgba(255, 255, 255, 0.035);
+    --border: rgba(255, 255, 255, 0.07);
+    --border-strong: rgba(255, 255, 255, 0.14);
+    --text: #e8eaf0;
+    --muted: #8a90a2;
+    --faint: #5d6377;
+    --accent: #7c5cff;
+    --accent-soft: rgba(124, 92, 255, 0.14);
+    --accent-text: #b3a3ff;
+    --green: #34d399;
+    --green-soft: rgba(52, 211, 153, 0.12);
+    --amber: #fbbf24;
+    --amber-soft: rgba(251, 191, 36, 0.12);
+    --red: #f43f5e;
+    --red-soft: rgba(244, 63, 94, 0.12);
+    --red-text: #ff9fb1;
+    --switch-off: rgba(255, 255, 255, 0.14);
+    --well: rgba(0, 0, 0, 0.25);
+    --grid: rgba(255, 255, 255, 0.06);
+    --overlay: rgba(3, 4, 8, 0.6);
+    --tip-bg: #1f2430;
+    --shadow: 0 1px 0 rgba(255, 255, 255, 0.02) inset;
+    --shadow-lg: 0 24px 60px -12px rgba(0, 0, 0, 0.7);
+    --radius: 14px;
+    --top-h: 68px;
+    --logo-1: #5b47d6;
+    --logo-2: #a78bfa;
+    --logo-3: #6ec1f5;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f5f9;
+    --surface: #ffffff;
+    --surface-2: #f8f9fc;
+    --hover: rgba(15, 23, 42, 0.03);
+    --border: rgba(15, 23, 42, 0.08);
+    --border-strong: rgba(15, 23, 42, 0.15);
+    --text: #0f172a;
+    --muted: #5b6478;
+    --faint: #98a0b3;
+    --accent: #6d4aff;
+    --accent-soft: rgba(109, 74, 255, 0.1);
+    --accent-text: #5b3df5;
+    --green: #059669;
+    --green-soft: rgba(5, 150, 105, 0.1);
+    --amber: #d97706;
+    --amber-soft: rgba(245, 158, 11, 0.13);
+    --red: #e11d48;
+    --red-soft: rgba(225, 29, 72, 0.08);
+    --red-text: #be123c;
+    --switch-off: rgba(15, 23, 42, 0.16);
+    --well: rgba(15, 23, 42, 0.035);
+    --grid: rgba(15, 23, 42, 0.07);
+    --overlay: rgba(15, 23, 42, 0.35);
+    --tip-bg: #0f172a;
+    --shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px -8px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 24px 60px -12px rgba(15, 23, 42, 0.3);
+    --logo-1: #3b2a91;
+    --logo-2: #8b5cf6;
+    --logo-3: #60b8f0;
+    color-scheme: light;
+  }
+  .theming, .theming *, .theming *::before, .theming *::after {
+    transition: background-color .3s, border-color .3s, color .3s, fill .3s, stroke .3s !important;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 13.5px/1.5 -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  button { font: inherit; color: inherit; }
+  a { color: inherit; }
+  kbd { font: 10.5px var(--mono); color: var(--muted); border: 1px solid var(--border-strong); border-radius: 5px; padding: 1px 5px; background: var(--surface-2); }
+  svg { flex: none; }
+  .mono { font-family: var(--mono); font-size: 12.5px; }
+
+  /* ───────── Shell ───────── */
+  .shell {
+    --sb-w: 248px;
+    display: grid; grid-template-columns: var(--sb-w) 1fr; min-height: 100vh;
+    transition: grid-template-columns .25s cubic-bezier(.2,.8,.2,1);
+  }
+  .shell.collapsed { --sb-w: 72px; }
+  .shell.preload, .shell.preload * { transition: none !important; }
+  .sidebar {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto; overflow-x: hidden;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 0 14px 18px;
+  }
+  .brand {
+    flex: none; display: flex; align-items: center; gap: 11px; height: var(--top-h);
+    margin: 0 -14px 6px; padding: 0 20px; border-bottom: 1px solid var(--border); white-space: nowrap;
+  }
+  .lbl, .brand-text { white-space: nowrap; }
+
+  /* Round collapse handle sitting on the sidebar edge, level with the header divider */
+  .sb-toggle {
+    position: fixed; z-index: 7; top: calc(var(--top-h) / 2 - 14px); left: calc(var(--sb-w) - 14px);
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; padding: 0;
+    background: var(--surface); color: var(--muted); border: 1px solid var(--border-strong);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, .1);
+    transition: left .25s cubic-bezier(.2,.8,.2,1), color .12s, border-color .12s, box-shadow .12s;
+  }
+  .sb-toggle:hover { color: var(--text); border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .sb-toggle svg { transition: transform .25s; }
+  .shell.collapsed .sb-toggle svg { transform: rotate(180deg); }
+  .logo { width: 36px; height: 36px; display: block; }
+  .brand b { font-size: 17px; font-weight: 800; letter-spacing: -.02em; display: block; line-height: 1.15; }
+  /* dotless ı + a brand-violet dot, like the wordmark */
+  .wm-i { position: relative; }
+  .wm-i::after {
+    content: ""; position: absolute; left: 50%; top: .2em; width: .2em; height: .2em;
+    border-radius: 50%; background: var(--logo-2); transform: translateX(-50%);
+  }
+  .brand small { color: var(--muted); font-size: 11.5px; }
+
+  .nav-label { font-size: 10.5px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .08em; padding: 14px 10px 6px; }
+  .nav a, .kind-filter button {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 9px; text-decoration: none;
+    color: var(--muted); font-weight: 500; cursor: pointer; border: 0; background: none; width: 100%; text-align: left;
+    transition: background .12s, color .12s;
+  }
+  .nav a:hover, .kind-filter button:hover { background: var(--hover); color: var(--text); }
+  .nav a.active { background: var(--accent-soft); color: var(--accent-text); }
+  .nav a .count, .kind-filter .count {
+    margin-left: auto; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+    color: var(--faint); background: var(--surface-2); border: 1px solid var(--border); border-radius: 99px; padding: 0 7px;
+  }
+  .nav a.active .count { color: var(--accent-text); border-color: transparent; background: transparent; }
+  .kind-filter button.active { color: var(--text); background: var(--hover); }
+  .kind-filter .swatch { flex: none; width: 8px; height: 8px; border-radius: 3px; }
+  .kind-filter .swatch.all { border-radius: 50%; background: conic-gradient(var(--logo-3), var(--logo-2), var(--logo-1), var(--logo-3)); }
+
+  /* Collapsed rail: icons only, labels move into tooltips */
+  @media (min-width: 961px) {
+    .shell.collapsed .brand { padding: 0; justify-content: center; }
+    .shell.collapsed .brand-text, .shell.collapsed .sidebar .lbl, .shell.collapsed .sidebar .count, .shell.collapsed .machine { display: none; }
+    .shell.collapsed .nav-label { font-size: 0; height: 1px; padding: 0; margin: 12px 8px; background: var(--border); }
+    .shell.collapsed .nav a, .shell.collapsed .kind-filter button { justify-content: center; padding: 10px 0; }
+    .shell.collapsed .kind-filter .swatch { width: 10px; height: 10px; }
+    .shell.collapsed .sidebar-foot .toggle { justify-content: center; padding: 0 !important; }
+  }
+
+  .sidebar-foot { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .machine { border: 1px solid var(--border); background: var(--surface-2); border-radius: 12px; padding: 12px; font-size: 12px; color: var(--muted); }
+  .machine b { color: var(--text); font-weight: 600; display: block; font-size: 12.5px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .machine .row { display: flex; justify-content: space-between; }
+
+  .main { min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px;
+    height: var(--top-h); padding: 0 28px; background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(14px); border-bottom: 1px solid var(--border);
+  }
+  .crumbs { min-width: 0; }
+  .crumbs h1 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.015em; }
+  .crumbs .sub { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 7px; }
+  .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(52,211,153,.6); animation: pulse 2s infinite; }
+  .pulse.paused { background: var(--faint); animation: none; }
+  @keyframes pulse { 70% { box-shadow: 0 0 0 7px rgba(52,211,153,0); } 100% { box-shadow: 0 0 0 0 rgba(52,211,153,0); } }
+  .spacer { flex: 1; }
+
+  .search { position: relative; width: min(360px, 34vw); }
+  .search svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+  .search input {
+    width: 100%; padding: 9px 40px 9px 36px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); font: inherit; outline: none; transition: border-color .15s, box-shadow .15s;
+  }
+  .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .search kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 10px; cursor: pointer; white-space: nowrap;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); font-weight: 500; text-decoration: none;
+    transition: background .12s, border-color .12s, transform .08s;
+  }
+  .btn:hover { background: var(--surface-2); border-color: var(--border-strong); }
+  .btn:active { transform: scale(.97); }
+  .btn.icon { padding: 8px; }
+  .btn.sm { padding: 5px 9px; font-size: 12.5px; border-radius: 8px; }
+  .btn.sm.icon { padding: 5px; }
+  .btn.danger { background: var(--red-soft); border-color: color-mix(in srgb, var(--red) 40%, transparent); color: var(--red-text); }
+  .btn.danger:hover { background: var(--red); border-color: var(--red); color: #fff; }
+  .btn.danger-solid { background: var(--red); border-color: var(--red); color: #fff; }
+  .btn.danger-solid:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+  .btn.ghost:hover { background: var(--hover); color: var(--text); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn.spin svg { animation: spin .7s linear; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .theme-btn .sun { display: none; }
+  :root[data-theme="light"] .theme-btn .sun { display: inline; }
+  :root[data-theme="light"] .theme-btn .moon { display: none; }
+  .theme-btn span { display: inline-flex; }
+  .menu-btn { display: none; }
+
+  .toggle { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; color: var(--muted); font-weight: 500; }
+  .toggle:hover { color: var(--text); }
+  .toggle input { display: none; }
+  .switch { width: 28px; height: 16px; border-radius: 99px; background: var(--switch-off); position: relative; transition: background .2s; }
+  .switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .toggle input:checked + .switch { background: var(--accent); }
+  .toggle input:checked + .switch::after { transform: translateX(12px); }
+
+  .content { padding: 24px 28px 60px; max-width: 1480px; width: 100%; }
+
+  /* ───────── Panels & KPIs ───────── */
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); min-width: 0; }
+  .panel-head { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .panel-head h2 { margin: 0; font-size: 13.5px; font-weight: 650; }
+  .panel-head .hint { color: var(--muted); font-size: 12px; }
+  .panel-body { padding: 16px 18px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .kpi { padding: 15px 16px; }
+  .kpi .label { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 500; }
+  .kpi .label svg { color: var(--faint); }
+  .kpi .value { font-size: 25px; font-weight: 700; letter-spacing: -.02em; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+  .kpi .foot { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .meter { height: 5px; border-radius: 99px; background: var(--well); overflow: hidden; margin-top: 9px; }
+  .meter span { display: block; height: 100%; border-radius: 99px; background: var(--accent); }
+  .kpi.warn .value, .kpi.warn .foot { color: var(--amber); }
+
+  .grid-2 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 16px; margin-bottom: 16px; }
+
+  /* ───────── Charts ───────── */
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 9px; padding: 2px; background: var(--surface-2); margin-left: auto; }
+  .seg button { border: 0; background: none; padding: 3px 10px; border-radius: 7px; cursor: pointer; color: var(--muted); font-size: 12px; font-weight: 600; }
+  .seg button.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+  .chart-headline { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; }
+  .chart-headline b { font-size: 22px; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+  .chart-headline span { color: var(--muted); font-size: 12px; }
+  .grid-2 > .panel { display: flex; flex-direction: column; }
+  .panel-body.grow { flex: 1; display: flex; flex-direction: column; }
+  .chart { position: relative; flex: 1; min-height: 220px; }
+  .chart svg { display: block; overflow: visible; }
+  .chart .axis { fill: var(--faint); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .chart-empty { height: 100%; display: grid; place-items: center; color: var(--muted); font-size: 12.5px; border: 1px dashed var(--border-strong); border-radius: 10px; }
+  .chart-tip {
+    position: absolute; pointer-events: none; background: var(--tip-bg); color: #fff; border-radius: 8px;
+    padding: 7px 10px; font-size: 12px; white-space: nowrap; transform: translate(-50%, -100%); margin-top: -12px;
+    box-shadow: var(--shadow-lg); display: none;
+  }
+  .chart-tip b { font-size: 13px; }
+  .chart-tip small { color: rgba(255,255,255,.65); display: block; }
+
+  .bars { display: flex; flex-direction: column; gap: 4px; }
+  .bar-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 7px 8px; margin: 0 -8px; border-radius: 8px; cursor: pointer; }
+  .bar-row:hover { background: var(--hover); }
+  .bar-row .lbl { font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-row .lbl small { color: var(--muted); font-weight: 400; margin-left: 5px; }
+  .bar-row .val { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+  .bar-track { grid-column: 1 / -1; height: 8px; }
+  .bar-fill { height: 100%; background: var(--accent); border-radius: 0 4px 4px 0; min-width: 3px; }
+
+  /* ───────── Tables ───────── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th {
+    text-align: left; font-size: 11px; font-weight: 650; color: var(--muted); text-transform: uppercase; letter-spacing: .05em;
+    padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--surface-2); white-space: nowrap; user-select: none;
+  }
+  th.sortable { cursor: pointer; }
+  th.sortable:hover { color: var(--text); }
+  th .arrow { opacity: 0; margin-left: 3px; }
+  th.sorted { color: var(--text); }
+  th.sorted .arrow { opacity: 1; }
+  td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; white-space: nowrap; }
+  tbody tr { cursor: pointer; transition: background .1s; }
+  tbody tr:hover { background: var(--hover); }
+  tbody tr.selected { background: var(--accent-soft); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.mono { color: var(--muted); }
+  .chk { width: 36px; padding-right: 0; }
+  input[type="checkbox"].cb { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; margin: 0; vertical-align: middle; }
+
+  .app-cell { display: flex; align-items: center; gap: 10px; min-width: 190px; }
+  .avatar {
+    flex: none; width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center;
+    font-weight: 700; font-size: 12px; color: #fff; text-transform: uppercase; box-shadow: inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .avatar.lg { width: 46px; height: 46px; border-radius: 12px; font-size: 16px; }
+  .app-cell .n { font-weight: 600; white-space: nowrap; }
+  .app-cell .s { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+
+  .port {
+    display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 7px; margin: 1px 4px 1px 0;
+    font: 600 12.5px var(--mono); text-decoration: none; color: var(--text);
+    background: var(--surface-2); border: 1px solid var(--border-strong); transition: border-color .12s, background .12s;
+  }
+  .port:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .port .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .port .dot.lan { background: var(--amber); }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 99px;
+    background: var(--surface-2); color: var(--muted); border: 1px solid var(--border); white-space: nowrap;
+  }
+  .badge .sw { width: 7px; height: 7px; border-radius: 2px; }
+  .badge.ok { background: var(--green-soft); color: var(--green); border-color: transparent; }
+  .badge.warn { background: var(--amber-soft); color: var(--amber); border-color: transparent; }
+  .badge.you { background: var(--accent-soft); color: var(--accent-text); border-color: transparent; }
+
+  .mem-cell { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+  .mini { width: 40px; height: 5px; border-radius: 99px; background: var(--well); overflow: hidden; }
+  .mini span { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+
+  .row-actions { display: flex; gap: 4px; justify-content: flex-end; align-items: center; }
+  /* Actions column stays visible when the table scrolls sideways */
+  .sticky-r { position: sticky; right: 0; z-index: 1; background: var(--surface); box-shadow: -10px 0 12px -10px rgba(0,0,0,.25); }
+  th.sticky-r { background: var(--surface-2); }
+  tbody tr:hover > .sticky-r { background: linear-gradient(var(--hover), var(--hover)), var(--surface); }
+  tbody tr.selected > .sticky-r { background: linear-gradient(var(--accent-soft), var(--accent-soft)), var(--surface); }
+
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid var(--border); min-height: 54px; }
+  .chip-filter { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent-text); font-weight: 600; font-size: 12px; }
+  .chip-filter button { border: 0; background: none; cursor: pointer; color: inherit; display: grid; place-items: center; padding: 2px; border-radius: 50%; }
+  .chip-filter button:hover { background: var(--accent-soft); }
+  .result-count { color: var(--muted); font-size: 12.5px; }
+
+  .bulkbar {
+    display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); min-height: 54px;
+    background: var(--accent-soft); border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .bulkbar b { color: var(--accent-text); }
+
+  /* Lists (attention, activity) */
+  .list { display: flex; flex-direction: column; }
+  .list-item { display: flex; gap: 12px; align-items: flex-start; padding: 12px 18px; border-bottom: 1px solid var(--border); }
+  .list-item:last-child { border-bottom: 0; }
+  .ic { flex: none; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; }
+  .ic.warn { background: var(--amber-soft); color: var(--amber); }
+  .ic.ok { background: var(--green-soft); color: var(--green); }
+  .ic.bad { background: var(--red-soft); color: var(--red); }
+  .ic.info { background: var(--accent-soft); color: var(--accent-text); }
+  .list-item .t { font-weight: 550; }
+  .list-item .d { color: var(--muted); font-size: 12px; }
+  .list-item .when { margin-left: auto; color: var(--faint); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .list-item.clickable { cursor: pointer; }
+  .list-item.clickable:hover { background: var(--hover); }
+
+  .empty { text-align: center; padding: 56px 20px; color: var(--muted); }
+  .empty .big { font-size: 34px; margin-bottom: 6px; }
+  .empty h3 { margin: 0 0 4px; color: var(--text); font-size: 15px; }
+
+  /* ───────── Drawer & modal ───────── */
+  .overlay { position: fixed; inset: 0; background: var(--overlay); z-index: 20; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .overlay.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; right: 0; bottom: 0; width: min(460px, 100vw); z-index: 21; background: var(--surface);
+    border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); display: flex; flex-direction: column;
+    transform: translateX(105%); transition: transform .25s cubic-bezier(.2,.8,.2,1);
+  }
+  .drawer.open { transform: none; }
+  .drawer-head { display: flex; gap: 14px; align-items: center; padding: 20px 22px; border-bottom: 1px solid var(--border); }
+  .drawer-head h3 { margin: 0; font-size: 17px; letter-spacing: -.01em; }
+  .drawer-head .s { color: var(--muted); font-size: 12.5px; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 8px 22px 22px; }
+  .drawer-foot { display: flex; gap: 8px; padding: 14px 22px; border-top: 1px solid var(--border); }
+  .section-title { font-size: 11px; font-weight: 700; color: var(--faint); text-transform: uppercase; letter-spacing: .07em; margin: 20px 0 10px; }
+  dl.props { display: grid; grid-template-columns: 120px 1fr; gap: 9px 12px; margin: 0; }
+  dl.props dt { color: var(--muted); }
+  dl.props dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; }
+  .codebox {
+    position: relative; font: 12px/1.6 var(--mono); background: var(--well); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 40px 10px 12px; word-break: break-all; color: var(--text);
+  }
+  .codebox .copy { position: absolute; top: 6px; right: 6px; }
+  .port-list { display: flex; flex-direction: column; gap: 8px; }
+  .port-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+  .port-row .p { font: 700 14px var(--mono); }
+  .port-row .h { color: var(--muted); font-size: 12px; font-family: var(--mono); }
+
+  .modal {
+    position: fixed; z-index: 30; top: 50%; left: 50%; width: min(460px, calc(100vw - 32px));
+    transform: translate(-50%, -46%) scale(.97); opacity: 0; pointer-events: none;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 16px; box-shadow: var(--shadow-lg);
+    transition: opacity .18s, transform .18s;
+  }
+  .modal.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+  .modal-body { padding: 22px 22px 8px; }
+  .modal-body h3 { margin: 12px 0 4px; font-size: 16px; }
+  .modal-body p { margin: 0 0 12px; color: var(--muted); }
+  .modal-list { max-height: 200px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; }
+  .modal-list div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .modal-list div:last-child { border-bottom: 0; }
+  .modal-list span { color: var(--muted); font: 12px var(--mono); }
+  .modal-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 16px 22px 20px; }
+  .modal-foot .left { margin-right: auto; }
+
+  /* Tooltip + toasts */
+  #tip {
+    position: fixed; z-index: 40; pointer-events: none; background: var(--tip-bg); color: #fff; font-size: 12px; line-height: 1.45;
+    padding: 7px 10px; border-radius: 8px; white-space: pre-line; max-width: 320px; box-shadow: var(--shadow-lg); display: none;
+  }
+  .toasts { position: fixed; bottom: 22px; right: 22px; display: flex; flex-direction: column; gap: 10px; z-index: 50; }
+  .toast {
+    display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 11px; min-width: 260px; max-width: 380px;
+    background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); box-shadow: var(--shadow-lg);
+    animation: toastIn .22s ease both;
+  }
+  .toast.ok { border-left: 3px solid var(--green); }
+  .toast.err { border-left: 3px solid var(--red); }
+  .toast.out { animation: toastOut .22s ease both; }
+  @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes toastOut { to { opacity: 0; transform: translateX(20px); } }
+
+  /* ───────── Responsive ───────── */
+  @media (max-width: 1200px) { .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 960px) {
+    .shell { grid-template-columns: 1fr; }
+    .sidebar { position: fixed; z-index: 25; width: 260px; left: 0; transform: translateX(-105%); transition: transform .25s; box-shadow: var(--shadow-lg); }
+    body.nav-open .sidebar { transform: none; }
+    .menu-btn { display: inline-flex; }
+    .sb-toggle { display: none; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .search { width: auto; flex: 1; }
+    .topbar .spacer, .hide-sm { display: none; }
+    .content, .topbar { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="shell preload" id="shell">
+  <button class="sb-toggle" id="sb-toggle" aria-label="Collapse sidebar"></button>
+  <aside class="sidebar">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <path d="M27 9H17.5Q12 9 12 14.5V29Q12 45.5 27.5 55" stroke="var(--logo-1)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M37 9H46.5Q52 9 52 14.5V29Q52 45.5 36.5 55" stroke="var(--logo-2)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="32" cy="21" r="3.6" fill="var(--logo-3)"/>
+        <circle cx="32" cy="31.5" r="3.6" fill="var(--logo-2)"/>
+        <circle cx="32" cy="42" r="3.6" fill="var(--logo-1)"/>
+      </svg>
+      <div class="brand-text"><b aria-label="Portside">Ports<span class="wm-i">ı</span>de</b><small>Local ports &amp; processes</small></div>
+    </div>
+
+    <div class="nav-label">Monitor</div>
+    <nav class="nav" id="nav"></nav>
+
+    <div class="nav-label">Filter by type</div>
+    <div class="kind-filter" id="kinds"></div>
+
+    <div class="sidebar-foot">
+      <label class="toggle" style="padding: 0 10px" title="macOS services and desktop apps (VS Code, ControlCenter, …)">
+        <input type="checkbox" id="sys" /><span class="switch"></span> <span class="lbl">Show system apps</span>
+      </label>
+      <div class="machine" id="machine"><b>—</b></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="btn icon menu-btn" id="menu" aria-label="Menu"></button>
+      <div class="crumbs">
+        <h1 id="title">Overview</h1>
+        <div class="sub"><span class="pulse" id="pulse"></span><span id="updated">Connecting…</span></div>
+      </div>
+      <div class="spacer"></div>
+      <div class="search">
+        <span id="search-ic"></span>
+        <input id="q" type="text" placeholder="Search apps, ports, PIDs, folders…" autocomplete="off" />
+        <kbd>/</kbd>
+      </div>
+      <label class="toggle hide-sm" title="Auto-refresh every 3 seconds"><input type="checkbox" id="auto" checked /><span class="switch"></span> Live</label>
+      <button class="btn icon theme-btn" id="theme" title="Toggle theme (T)" aria-label="Toggle theme"></button>
+      <button class="btn" id="refresh" title="Refresh (R)"></button>
+    </header>
+
+    <main class="content" id="view"></main>
+  </div>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<aside class="drawer" id="drawer"></aside>
+<div class="modal" id="modal" role="dialog" aria-modal="true"></div>
+<div id="tip"></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* ═════════════ Utilities ═════════════ */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const shortPath = (p) => (p ? p.replace(/^\/Users\/[^/]+/, "~") : "");
+const fmtMem = (mb) => (mb == null ? "–" : mb >= 1024 ? (mb / 1024).toFixed(mb >= 10240 ? 0 : 1) + " GB" : Math.round(mb) + " MB");
+const fmtDur = (s) => {
+  if (s == null) return "–";
+  if (s < 60) return "<1m";
+  const m = Math.floor(s / 60), h = Math.floor(m / 60), d = Math.floor(h / 24);
+  if (m < 60) return `${m}m`;
+  if (h < 24) return `${h}h ${m % 60}m`;
+  return `${d}d ${h % 24}h`;
+};
+const fmtTime = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+const fmtClock = (t) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const timeAgo = (t) => {
+  const s = Math.round((Date.now() - t) / 1000);
+  if (s < 10) return "just now";
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return new Date(t).toLocaleDateString();
+};
+
+const ICONS = {
+  overview: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+  apps: '<path d="m12 2 9 5-9 5-9-5 9-5z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/>',
+  ports: '<path d="M9 2v6M15 2v6"/><path d="M6 8h12v4a6 6 0 0 1-12 0V8z"/><path d="M12 18v4"/>',
+  activity: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
+  moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>',
+  x: '<path d="M18 6 6 18M6 6l12 12"/>',
+  ext: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  copy: '<rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>',
+  alert: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/>',
+  check: '<path d="M20 6 9 17l-5-5"/>',
+  play: '<path d="m6 3 14 9-14 9V3z"/>',
+  stop: '<rect x="5" y="5" width="14" height="14" rx="2"/>',
+  skull: '<circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M8 20v2h8v-2"/><path d="M16 20a2 2 0 0 0 1.56-3.25 8 8 0 1 0-11.12 0A2 2 0 0 0 8 20"/>',
+  cpu: '<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>',
+  mem: '<path d="M6 19v-3M10 19v-3M14 19v-3M18 19v-3M8 11V9M16 11V9M12 11V9"/><path d="M2 15h20V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z"/>',
+  globe: '<circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
+  menu: '<path d="M3 6h18M3 12h18M3 18h18"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  chevL: '<path d="m15 18-6-6 6-6"/>',
+  trash: '<path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>',
+};
+const icon = (n, size = 15) =>
+  `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS[n]}</svg>`;
+
+const KIND = {
+  antigravity: ["Antigravity", "#4285f4", "#34a853"], next: ["Next.js", "#71717a", "#18181b"], vite: ["Vite", "#646cff", "#bd34fe"],
+  nuxt: ["Nuxt", "#00dc82", "#0b8f5a"], astro: ["Astro", "#ff5d01", "#b845ed"], remix: ["Remix", "#3992ff", "#121212"],
+  webpack: ["Webpack", "#1c78c0", "#8ed6fb"], bun: ["Bun", "#c9a26d", "#8a6a3d"], deno: ["Deno", "#6b7280", "#1f2937"],
+  django: ["Django", "#0c4b33", "#44b78b"], flask: ["Flask", "#6b7280", "#374151"], fastapi: ["FastAPI", "#009688", "#05998b"],
+  rails: ["Rails", "#cc0000", "#8a0000"], postgres: ["Postgres", "#336791", "#1e3f5a"], mysql: ["MySQL", "#00758f", "#f29111"],
+  redis: ["Redis", "#dc382d", "#a41e11"], mongo: ["MongoDB", "#13aa52", "#0b6b33"], docker: ["Docker", "#2496ed", "#0b5fa5"],
+  java: ["Java", "#e76f00", "#5382a1"], go: ["Go", "#00add8", "#007d9c"], php: ["PHP", "#777bb4", "#4f5b93"],
+  ruby: ["Ruby", "#cc342d", "#7a1a16"], python: ["Python", "#3776ab", "#e0b30f"], node: ["Node.js", "#3c873a", "#8cc84b"],
+  app: ["Desktop app", "#64748b", "#334155"], other: ["Other", "#6b7280", "#4b5563"],
+};
+const kindLabel = (k) => (KIND[k] || KIND.other)[0];
+const kindColor = (k) => (KIND[k] || KIND.other)[1];
+const title = (a) => (a.project && a.project !== a.name ? a.project : a.name);
+const subtitle = (a) => (a.project && a.project !== a.name ? a.name : a.processName);
+function avatar(a, cls = "") {
+  const [, c1, c2] = KIND[a.kind] || KIND.other;
+  const txt = title(a).replace(/[^a-z0-9]/gi, "").slice(0, 2) || "?";
+  return `<div class="avatar ${cls}" style="background:linear-gradient(135deg,${c1},${c2})">${esc(txt)}</div>`;
+}
+const kindBadge = (k) => `<span class="badge"><span class="sw" style="background:${kindColor(k)}"></span>${kindLabel(k)}</span>`;
+const exposureBadge = (p) => p.public
+  ? `<span class="badge warn">${icon("alert", 11)} Network</span>`
+  : `<span class="badge ok">${icon("check", 11)} Local</span>`;
+const portChips = (a) =>
+  a.ports.map((p) => `<a class="port" href="http://localhost:${p.port}" target="_blank" rel="noopener" data-stop
+      data-tip="${p.public ? "⚠ Reachable from your network" : "Local only"}\nBound to ${esc(p.hosts.join(", "))}\nClick to open"><span class="dot ${p.public ? "lan" : ""}"></span>${p.port}</a>`).join("");
+
+/* ═════════════ State ═════════════ */
+const VIEWS = {
+  overview: { title: "Overview", icon: "overview" },
+  apps: { title: "Applications", icon: "apps" },
+  ports: { title: "Ports", icon: "ports" },
+  activity: { title: "Activity", icon: "activity" },
+};
+const HISTORY_MS = 60 * 60 * 1000;
+const state = {
+  apps: [], machine: null, at: 0, loaded: false,
+  view: VIEWS[location.hash.slice(1)] ? location.hash.slice(1) : "overview",
+  query: "", kind: null,
+  showSystem: localStorage.getItem("showSystem") === "1",
+  sort: JSON.parse(localStorage.getItem("sort") || '{"key":"port","dir":1}'),
+  portScope: "all", range: Number(localStorage.getItem("range") || 900),
+  selected: new Set(), drawerPid: null, modalPids: null,
+  history: JSON.parse(localStorage.getItem("history") || "[]"),
+  events: JSON.parse(localStorage.getItem("events") || "[]"),
+  prev: null, killing: new Map(), timer: null,
+  collapsed: localStorage.getItem("sidebar") === "collapsed",
+};
+
+const baseApps = () => state.apps.filter((a) => state.showSystem || !a.system);
+function filteredApps() {
+  const q = state.query.trim().toLowerCase().replace(/^:/, "");
+  return baseApps().filter((a) => {
+    if (state.kind && a.kind !== state.kind) return false;
+    if (!q) return true;
+    return [title(a), a.name, a.processName, a.pid, a.command, a.cwd, kindLabel(a.kind), a.parent, ...a.ports.map((p) => p.port)]
+      .join(" ").toLowerCase().includes(q);
+  });
+}
+const SORTERS = {
+  name: (a) => title(a).toLowerCase(), port: (a) => a.ports[0]?.port ?? 0, pid: (a) => a.pid, kind: (a) => kindLabel(a.kind),
+  parent: (a) => (a.parent || "").toLowerCase(), uptime: (a) => a.uptimeSec ?? 0, memory: (a) => a.memoryMb ?? 0, cpu: (a) => a.cpu ?? 0,
+};
+function sorted(list) {
+  const f = SORTERS[state.sort.key] || SORTERS.port, d = state.sort.dir;
+  return [...list].sort((a, b) => (f(a) > f(b) ? d : f(a) < f(b) ? -d : 0));
+}
+
+/* ═════════════ Shell rendering ═════════════ */
+const railTip = (text) => (state.collapsed ? `data-tip="${esc(text)}"` : "");
+
+function setCollapsed(on) {
+  state.collapsed = on;
+  $("#shell").classList.toggle("collapsed", on);
+  localStorage.setItem("sidebar", on ? "collapsed" : "open");
+  const t = $("#sb-toggle");
+  t.setAttribute("aria-label", on ? "Expand sidebar" : "Collapse sidebar");
+  t.dataset.tip = `${on ? "Expand" : "Collapse"} sidebar  [`;
+  const sys = $("#sys").closest("label");
+  if (on) sys.dataset.tip = "Show system apps"; else delete sys.dataset.tip;
+  hideTip();
+  renderNav();
+  setTimeout(drawMemChart, 280); // chart width changes with the sidebar
+}
+
+function renderNav() {
+  const base = baseApps();
+  const counts = { overview: "", apps: base.length, ports: base.reduce((n, a) => n + a.ports.length, 0), activity: state.events.length || "" };
+  $("#nav").innerHTML = Object.entries(VIEWS).map(([k, v]) => `
+    <a href="#${k}" class="${state.view === k ? "active" : ""}" ${railTip(v.title + (counts[k] !== "" ? ` · ${counts[k]}` : ""))}>${icon(v.icon, 16)} <span class="lbl">${v.title}</span>
+      ${counts[k] !== "" ? `<span class="count">${counts[k]}</span>` : ""}</a>`).join("");
+
+  const byKind = {};
+  base.forEach((a) => (byKind[a.kind] = (byKind[a.kind] || 0) + 1));
+  const kinds = Object.entries(byKind).sort((a, b) => b[1] - a[1]);
+  $("#kinds").innerHTML = `<button class="${!state.kind ? "active" : ""}" data-kind="" ${railTip(`All types · ${base.length}`)}><span class="swatch all"></span><span class="lbl">All types</span> <span class="count">${base.length}</span></button>` +
+    kinds.map(([k, n]) => `<button class="${state.kind === k ? "active" : ""}" data-kind="${k}" ${railTip(`${kindLabel(k)} · ${n}`)}>
+      <span class="swatch" style="background:${kindColor(k)}"></span><span class="lbl">${kindLabel(k)}</span><span class="count">${n}</span></button>`).join("");
+
+  if (state.machine) {
+    const m = state.machine;
+    $("#machine").innerHTML = `<b title="${esc(m.hostname)}">${esc(m.hostname.replace(/\.local$/, ""))}</b>
+      <div class="row"><span>Memory</span><span>${fmtMem(m.totalMemMb)}</span></div>
+      <div class="row"><span>CPU cores</span><span>${m.cpus}</span></div>`;
+  }
+  $("#title").textContent = VIEWS[state.view].title;
+}
+
+function render() {
+  hideTip();
+  renderNav();
+  const view = $("#view");
+  if (!state.loaded) { view.innerHTML = `<div class="empty"><div class="big">⏳</div><h3>Scanning ports…</h3></div>`; return; }
+  ({ overview: renderOverview, apps: renderApps, ports: renderPorts, activity: renderActivity })[state.view](view);
+  if (state.drawerPid) renderDrawer();
+}
+
+/* ═════════════ Overview ═════════════ */
+function renderOverview(view) {
+  const apps = baseApps();
+  const m = state.machine || { totalMemMb: 1, cpus: 1 };
+  const mem = apps.reduce((n, a) => n + (a.memoryMb || 0), 0);
+  const cpu = apps.reduce((n, a) => n + (a.cpu || 0), 0);
+  const ports = apps.reduce((n, a) => n + a.ports.length, 0);
+  const lan = apps.filter((a) => a.ports.some((p) => p.public));
+  const memPct = (mem / m.totalMemMb) * 100;
+  const cpuPct = cpu / m.cpus;
+  const newest = [...apps].sort((a, b) => (a.uptimeSec ?? 0) - (b.uptimeSec ?? 0)).slice(0, 6);
+  const top = [...apps].sort((a, b) => (b.memoryMb || 0) - (a.memoryMb || 0)).slice(0, 7);
+  const maxMem = Math.max(1, ...top.map((a) => a.memoryMb || 0));
+
+  view.innerHTML = `
+  <section class="kpis">
+    ${kpi("apps", "Running apps", apps.length, `${new Set(apps.map((a) => a.project).filter(Boolean)).size} projects`)}
+    ${kpi("ports", "Listening ports", ports, `${apps.filter((a) => a.ports.length > 1).length} apps use 2+ ports`)}
+    ${kpi("mem", "Memory", fmtMem(mem), `${memPct.toFixed(1)}% of ${fmtMem(m.totalMemMb)}`, memPct)}
+    ${kpi("cpu", "CPU", `${cpuPct.toFixed(1)}%`, `across ${m.cpus} cores`, cpuPct)}
+    ${kpi("globe", "Exposed to network", lan.length, lan.length ? `${icon("alert", 12)} reachable from your LAN` : `${icon("check", 12)} all local-only`, null, lan.length > 0)}
+  </section>
+
+  <section class="grid-2">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Memory over time</h2><span class="hint hide-sm">${state.showSystem ? "all apps" : "excluding system apps"}</span>
+        <div class="seg">${[[300, "5m"], [900, "15m"], [3600, "1h"]].map(([s, l]) =>
+          `<button data-range="${s}" class="${state.range === s ? "active" : ""}">${l}</button>`).join("")}</div>
+      </div>
+      <div class="panel-body grow">
+        <div class="chart-headline"><b>${fmtMem(mem)}</b><span id="mem-peak"></span></div>
+        <div class="chart" id="mem-chart"></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Top memory</h2><span class="hint">by app</span></div>
+      <div class="panel-body">
+        ${top.length ? `<div class="bars">${top.map((a) => `
+          <div class="bar-row" data-open="${a.pid}" data-tip="${esc(title(a))} · PID ${a.pid}\n${fmtMem(a.memoryMb)} · ${(((a.memoryMb || 0) / m.totalMemMb) * 100).toFixed(1)}% of RAM\nPorts ${a.ports.map((p) => ":" + p.port).join(" ")}">
+            <div class="lbl">${esc(title(a))}<small>${esc(subtitle(a))}</small></div>
+            <div class="val">${fmtMem(a.memoryMb)}</div>
+            <div class="bar-track"><div class="bar-fill" style="width:${Math.max(1, ((a.memoryMb || 0) / maxMem) * 100)}%"></div></div>
+          </div>`).join("")}</div>` : `<div class="empty">No apps</div>`}
+      </div>
+    </div>
+  </section>
+
+  <section class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><h2>Recently started</h2><a class="btn sm ghost" href="#apps" style="margin-left:auto">View all →</a></div>
+      ${newest.length ? `<div class="table-wrap"><table>
+        <thead><tr><th>Application</th><th>Ports</th><th>Started by</th><th class="num">Uptime</th><th class="num">Memory</th></tr></thead>
+        <tbody>${newest.map((a) => `
+          <tr data-open="${a.pid}">
+            <td><div class="app-cell">${avatar(a)}<div style="min-width:0"><div class="n">${esc(title(a))}</div><div class="s">${esc(subtitle(a))}</div></div></div></td>
+            <td>${portChips(a)}</td>
+            <td>${esc(a.parent || "–")}</td>
+            <td class="num">${fmtDur(a.uptimeSec)}</td>
+            <td class="num">${fmtMem(a.memoryMb)}</td>
+          </tr>`).join("")}</tbody></table></div>` : `<div class="empty">Nothing running</div>`}
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Needs attention</h2></div>
+      <div class="list">${attentionItems(apps)}</div>
+    </div>
+  </section>`;
+  drawMemChart();
+}
+
+function kpi(ic, label, value, foot, pct = null, warn = false) {
+  return `<div class="panel kpi ${warn ? "warn" : ""}">
+    <div class="label">${icon(ic, 14)} ${label}</div>
+    <div class="value">${value}</div>
+    <div class="foot">${foot}</div>
+    ${pct != null ? `<div class="meter"><span style="width:${Math.min(100, Math.max(0.5, pct))}%"></span></div>` : ""}
+  </div>`;
+}
+
+function attentionItems(apps) {
+  const items = [];
+  for (const a of apps) {
+    const lanPorts = a.ports.filter((p) => p.public);
+    if (lanPorts.length && !a.system)
+      items.push(["warn", "alert", `${title(a)} is reachable from your network`, `Port ${lanPorts.map((p) => ":" + p.port).join(", ")} is bound to all interfaces. Bind to 127.0.0.1 to keep it private.`, a]);
+    if ((a.memoryMb || 0) >= 1024)
+      items.push(["warn", "mem", `${title(a)} is using ${fmtMem(a.memoryMb)}`, "High memory for a local process.", a]);
+    if (!a.system && !a.self && (a.uptimeSec || 0) > 86400 && a.kind !== "docker")
+      items.push(["info", "clock", `${title(a)} has been running ${fmtDur(a.uptimeSec)}`, "Possibly a forgotten dev server — kill it if you're done.", a]);
+  }
+  if (!items.length) return `<div class="list-item"><div class="ic ok">${icon("check", 15)}</div><div><div class="t">All clear</div><div class="d">No exposed ports, heavy processes or forgotten servers.</div></div></div>`;
+  return items.slice(0, 6).map(([lvl, ic, t, d, a]) => `
+    <div class="list-item clickable" data-open="${a.pid}">
+      <div class="ic ${lvl}">${icon(ic, 15)}</div>
+      <div><div class="t">${esc(t)}</div><div class="d">${esc(d)}</div></div>
+    </div>`).join("");
+}
+
+/* Memory-over-time area chart with crosshair tooltip */
+function drawMemChart() {
+  const box = $("#mem-chart");
+  if (!box) return;
+  const key = state.showSystem ? "memAll" : "mem";
+  const now = state.at || Date.now();
+  const pts = state.history.filter((h) => h.t >= now - state.range * 1000).map((h) => ({ t: h.t, v: h[key] }));
+  if (pts.length < 2) {
+    box.innerHTML = `<div class="chart-empty">Collecting samples every 3 s — the chart fills in as you watch</div>`;
+    return;
+  }
+  const W = box.clientWidth, H = box.clientHeight, P = { l: 56, r: 8, t: 10, b: 24 };
+  const iw = W - P.l - P.r, ih = H - P.t - P.b;
+  const t0 = Math.max(now - state.range * 1000, pts[0].t), t1 = now;
+  const vals = pts.map((p) => p.v);
+  const peak = Math.max(...vals);
+  const yMax = niceMax(peak * 1.15);
+  const x = (t) => P.l + ((t - t0) / Math.max(1, t1 - t0)) * iw;
+  const y = (v) => P.t + ih - (v / yMax) * ih;
+  $("#mem-peak").textContent = `peak ${fmtMem(peak)} · low ${fmtMem(Math.min(...vals))} in this window`;
+
+  // Break the line where samples are missing (tab hidden / Live paused)
+  const segs = [[]];
+  pts.forEach((p, i) => {
+    if (i && p.t - pts[i - 1].t > 30000) segs.push([]);
+    segs[segs.length - 1].push(p);
+  });
+  const line = segs.map((s) => s.map((p, i) => `${i ? "L" : "M"}${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join("")).join("");
+  const area = segs.filter((s) => s.length > 1).map((s) =>
+    `M${x(s[0].t).toFixed(1)},${y(0)}` + s.map((p) => `L${x(p.t).toFixed(1)},${y(p.v).toFixed(1)}`).join("") + `L${x(s[s.length - 1].t).toFixed(1)},${y(0)}Z`).join("");
+  const ticks = [0, 1, 2, 3, 4].map((i) => (yMax / 4) * i);
+  const xt = [t0, (t0 + t1) / 2, t1];
+
+  box.innerHTML = `
+    <svg width="${W}" height="${H}" role="img" aria-label="Memory usage over time">
+      <defs><linearGradient id="mg" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0" stop-color="var(--accent)" stop-opacity=".28"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/>
+      </linearGradient></defs>
+      ${ticks.map((v) => `<line x1="${P.l}" x2="${W - P.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/>
+        <text class="axis" x="${P.l - 8}" y="${y(v) + 4}" text-anchor="end">${fmtMem(v)}</text>`).join("")}
+      ${xt.map((t, i) => `<text class="axis" x="${x(t)}" y="${H - 4}" text-anchor="${["start", "middle", "end"][i]}">${i === 2 ? "now" : fmtClock(t)}</text>`).join("")}
+      <path d="${area}" fill="url(#mg)"/>
+      <path d="${line}" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <g id="xh" style="display:none">
+        <line y1="${P.t}" y2="${P.t + ih}" stroke="var(--border-strong)" stroke-dasharray="3 3"/>
+        <circle r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/>
+      </g>
+      <rect x="${P.l}" y="${P.t}" width="${iw}" height="${ih}" fill="transparent" id="hit"/>
+    </svg>
+    <div class="chart-tip" id="ctip"></div>`;
+
+  const hit = $("#hit", box), xh = $("#xh", box), tip = $("#ctip", box);
+  hit.addEventListener("mousemove", (e) => {
+    const r = hit.getBoundingClientRect();
+    const t = t0 + ((e.clientX - r.left) / r.width) * (t1 - t0);
+    const p = pts.reduce((best, q) => (Math.abs(q.t - t) < Math.abs(best.t - t) ? q : best));
+    const px = x(p.t), py = y(p.v);
+    xh.style.display = "";
+    $("line", xh).setAttribute("x1", px); $("line", xh).setAttribute("x2", px);
+    $("circle", xh).setAttribute("cx", px); $("circle", xh).setAttribute("cy", py);
+    tip.style.display = "block";
+    tip.style.left = `${Math.min(Math.max(px, 70), W - 70)}px`;
+    tip.style.top = `${py}px`;
+    tip.innerHTML = `<b>${fmtMem(p.v)}</b><small>${fmtTime(p.t)}</small>`;
+  });
+  hit.addEventListener("mouseleave", () => { xh.style.display = "none"; tip.style.display = "none"; });
+}
+function niceMax(v) {
+  if (v <= 0) return 100;
+  const step = v / 4, mag = 10 ** Math.floor(Math.log10(step));
+  return [1, 2, 2.5, 5, 10].find((n) => n * mag >= step) * mag * 4;
+}
+
+/* ═════════════ Applications ═════════════ */
+function renderApps(view) {
+  const apps = sorted(filteredApps());
+  const maxMem = Math.max(1, ...apps.map((a) => a.memoryMb || 0));
+  const killable = apps.filter((a) => !a.self);
+  const allChecked = killable.length > 0 && killable.every((a) => state.selected.has(a.pid));
+  const th = (key, label, cls = "") => {
+    const on = state.sort.key === key;
+    return `<th class="sortable ${cls} ${on ? "sorted" : ""}" data-sort="${key}">${label}<span class="arrow">${on && state.sort.dir < 0 ? "↓" : "↑"}</span></th>`;
+  };
+
+  view.innerHTML = `
+  <div class="panel">
+    ${state.selected.size ? `
+      <div class="bulkbar">
+        <b>${state.selected.size} selected</b>
+        <button class="btn sm ghost" data-action="clear-sel">Clear</button>
+        <div class="spacer"></div>
+        <button class="btn sm danger" data-action="kill-selected">${icon("stop", 13)} Stop selected</button>
+      </div>` : `
+      <div class="toolbar">
+        ${state.kind ? `<span class="chip-filter">Type: ${kindLabel(state.kind)}<button data-action="clear-kind" aria-label="Clear filter">${icon("x", 12)}</button></span>` : ""}
+        ${state.query ? `<span class="chip-filter">“${esc(state.query)}”<button data-action="clear-q" aria-label="Clear search">${icon("x", 12)}</button></span>` : ""}
+        <span class="result-count">${apps.length} application${apps.length === 1 ? "" : "s"}</span>
+        <div class="spacer"></div>
+        <span class="result-count hide-sm">Click a row for details · tick boxes to stop several at once</span>
+      </div>`}
+    ${apps.length ? `
+    <div class="table-wrap"><table>
+      <thead><tr>
+        <th class="chk"><input type="checkbox" class="cb" data-action="select-all" ${allChecked ? "checked" : ""} aria-label="Select all"></th>
+        ${th("name", "Application")}${th("port", "Ports")}${th("pid", "PID", "num")}${th("kind", "Type")}
+        ${th("parent", "Started by")}${th("uptime", "Uptime", "num")}${th("memory", "Memory", "num")}${th("cpu", "CPU", "num")}
+        <th class="num sticky-r">Actions</th>
+      </tr></thead>
+      <tbody>${apps.map((a) => `
+        <tr data-open="${a.pid}" class="${state.selected.has(a.pid) ? "selected" : ""}">
+          <td class="chk" data-stop><input type="checkbox" class="cb" data-select="${a.pid}" ${state.selected.has(a.pid) ? "checked" : ""} ${a.self ? "disabled" : ""} aria-label="Select"></td>
+          <td><div class="app-cell">${avatar(a)}<div style="min-width:0">
+            <div class="n">${esc(title(a))} ${a.self ? `<span class="badge you">this dashboard</span>` : ""}</div>
+            <div class="s" data-tip="${esc(a.cwd || a.command)}">${esc(subtitle(a))}${a.cwd && a.cwd !== "/" ? ` · ${esc(shortPath(a.cwd))}` : ""}</div>
+          </div></div></td>
+          <td>${portChips(a)}</td>
+          <td class="num mono">${a.pid}</td>
+          <td>${kindBadge(a.kind)}</td>
+          <td>${esc(a.parent || "–")}</td>
+          <td class="num">${fmtDur(a.uptimeSec)}</td>
+          <td class="num"><div class="mem-cell">${fmtMem(a.memoryMb)}<div class="mini"><span style="width:${((a.memoryMb || 0) / maxMem) * 100}%"></span></div></div></td>
+          <td class="num">${a.cpu != null ? a.cpu.toFixed(1) + "%" : "–"}</td>
+          <td class="sticky-r" data-stop><div class="row-actions">
+            <a class="btn sm icon ghost" href="http://localhost:${a.ports[0].port}" target="_blank" rel="noopener" data-tip="Open :${a.ports[0].port}">${icon("ext", 14)}</a>
+            <button class="btn sm icon ghost" data-action="details" data-pid="${a.pid}" data-tip="Details">${icon("more", 14)}</button>
+            <button class="btn sm danger" data-action="kill" data-pid="${a.pid}" ${a.self ? "disabled" : ""}>Kill</button>
+          </div></td>
+        </tr>`).join("")}
+      </tbody></table></div>` : emptyState()}
+  </div>`;
+}
+
+function emptyState() {
+  const hidden = state.apps.filter((a) => a.system).length;
+  if (state.query || state.kind) return `<div class="empty"><div class="big">🔍</div><h3>No matches</h3><div>Try a different search or clear the filters.</div></div>`;
+  return `<div class="empty"><div class="big">🌙</div><h3>Nothing listening</h3><div>No dev servers are running.${hidden && !state.showSystem ? ` ${hidden} system app${hidden > 1 ? "s" : ""} hidden.` : ""}</div></div>`;
+}
+
+/* ═════════════ Ports ═════════════ */
+function renderPorts(view) {
+  const all = filteredApps().flatMap((a) => a.ports.map((p) => ({ ...p, app: a })));
+  const lanCount = all.filter((r) => r.public).length;
+  const rows = all.filter((r) => state.portScope === "all" || (state.portScope === "lan" ? r.public : !r.public)).sort((a, b) => a.port - b.port);
+
+  view.innerHTML = `
+  <div class="panel">
+    <div class="toolbar">
+      <div class="seg" style="margin-left:0">
+        ${[["all", `All · ${all.length}`], ["local", `Local only · ${all.length - lanCount}`], ["lan", `Network · ${lanCount}`]].map(([k, l]) =>
+          `<button data-scope="${k}" class="${state.portScope === k ? "active" : ""}">${l}</button>`).join("")}
+      </div>
+      <div class="spacer"></div>
+      <span class="result-count hide-sm"><span class="badge ok">${icon("check", 11)} Local</span> only this Mac &nbsp; <span class="badge warn">${icon("alert", 11)} Network</span> other devices can connect</span>
+    </div>
+    ${rows.length ? `<div class="table-wrap"><table>
+      <thead><tr><th>Port</th><th>Bound to</th><th>Exposure</th><th>Application</th><th class="num">PID</th><th>Folder</th><th class="num sticky-r">Actions</th></tr></thead>
+      <tbody>${rows.map((r) => `
+        <tr data-open="${r.app.pid}">
+          <td><span style="font:700 14px var(--mono)">:${r.port}</span></td>
+          <td class="mono">${esc(r.hosts.join(", "))}</td>
+          <td>${exposureBadge(r)}</td>
+          <td><div class="app-cell">${avatar(r.app)}<div style="min-width:0"><div class="n">${esc(title(r.app))}</div><div class="s">${esc(subtitle(r.app))}</div></div></div></td>
+          <td class="num mono">${r.app.pid}</td>
+          <td class="mono" style="max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">${esc(shortPath(r.app.cwd) || "–")}</td>
+          <td class="sticky-r" data-stop><div class="row-actions">
+            <a class="btn sm" href="http://localhost:${r.port}" target="_blank" rel="noopener">${icon("ext", 13)} Open</a>
+            <button class="btn sm danger" data-action="kill" data-pid="${r.app.pid}" ${r.app.self ? "disabled" : ""}>Kill</button>
+          </div></td>
+        </tr>`).join("")}</tbody></table></div>` : emptyState()}
+  </div>`;
+}
+
+/* ═════════════ Activity ═════════════ */
+const EVENT_STYLE = {
+  started: ["info", "play", "Started"], stopped: ["ok", "stop", "Stopped"],
+  killed: ["bad", "skull", "Killed"], failed: ["bad", "alert", "Kill failed for"],
+};
+function renderActivity(view) {
+  const q = state.query.trim().toLowerCase();
+  const evs = state.events.filter((e) => !q || `${e.name} ${e.ports} ${e.pid}`.toLowerCase().includes(q));
+  view.innerHTML = `
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Event log</h2><span class="hint hide-sm">apps starting and stopping while this dashboard is open · kept in this browser</span>
+      <button class="btn sm ghost" data-action="clear-log" style="margin-left:auto" ${state.events.length ? "" : "disabled"}>${icon("trash", 13)} Clear</button>
+    </div>
+    ${evs.length ? `<div class="list">${evs.map((e) => {
+      const [lvl, ic, verb] = EVENT_STYLE[e.type];
+      return `<div class="list-item">
+        <div class="ic ${lvl}">${icon(ic, 14)}</div>
+        <div><div class="t">${verb} <b>${esc(e.name)}</b>${e.ports ? ` on ${esc(e.ports)}` : ""}</div>
+          <div class="d">PID ${e.pid}${e.detail ? ` · ${esc(e.detail)}` : ""}</div></div>
+        <div class="when" data-tip="${new Date(e.t).toLocaleString()}">${timeAgo(e.t)}</div>
+      </div>`;
+    }).join("")}</div>` : `<div class="empty"><div class="big">📭</div><h3>No activity yet</h3><div>Start or stop a dev server and it will show up here.</div></div>`}
+  </div>`;
+}
+function logEvent(type, app, detail) {
+  state.events.unshift({ t: Date.now(), type, pid: app.pid, name: title(app), ports: app.ports.map((p) => ":" + p.port).join(", "), detail });
+  state.events = state.events.slice(0, 300);
+  localStorage.setItem("events", JSON.stringify(state.events));
+}
+
+/* ═════════════ Drawer ═════════════ */
+function openDrawer(pid) {
+  state.drawerPid = pid;
+  renderDrawer();
+  $("#drawer").classList.add("open");
+  $("#overlay").classList.add("open");
+}
+function closeDrawer() {
+  state.drawerPid = null;
+  $("#drawer").classList.remove("open");
+  if (!state.modalPids) $("#overlay").classList.remove("open");
+}
+function renderDrawer() {
+  const a = state.apps.find((x) => x.pid === state.drawerPid);
+  const d = $("#drawer");
+  if (!a) {
+    d.innerHTML = `<div class="drawer-head"><div style="flex:1"><h3>Process ended</h3><div class="s">PID ${state.drawerPid} is no longer listening.</div></div>
+      <button class="btn icon ghost" data-action="close-drawer" aria-label="Close">${icon("x", 16)}</button></div>`;
+    return;
+  }
+  const scroll = $(".drawer-body", d)?.scrollTop || 0;
+  d.innerHTML = `
+    <div class="drawer-head">
+      ${avatar(a, "lg")}
+      <div style="flex:1; min-width:0"><h3>${esc(title(a))}</h3><div class="s">${esc(subtitle(a))} · ${kindBadge(a.kind)}</div></div>
+      <button class="btn icon ghost" data-action="close-drawer" aria-label="Close">${icon("x", 16)}</button>
+    </div>
+    <div class="drawer-body">
+      <div class="section-title">Ports</div>
+      <div class="port-list">${a.ports.map((p) => `
+        <div class="port-row">
+          <span class="p">:${p.port}</span>
+          <span class="h">${esc(p.hosts.join(", "))}</span>
+          ${exposureBadge(p)}
+          <a class="btn sm" style="margin-left:auto" href="http://localhost:${p.port}" target="_blank" rel="noopener">${icon("ext", 13)} Open</a>
+        </div>`).join("")}</div>
+
+      <div class="section-title">Process</div>
+      <dl class="props">
+        <dt>PID</dt><dd class="mono">${a.pid}</dd>
+        <dt>Started by</dt><dd>${esc(a.parent || "–")} <span style="color:var(--faint)">(PID ${a.ppid ?? "–"})</span></dd>
+        <dt>User</dt><dd>${esc(a.user || "–")}</dd>
+        <dt>Uptime</dt><dd>${fmtDur(a.uptimeSec)}</dd>
+        <dt>Memory</dt><dd>${fmtMem(a.memoryMb)}</dd>
+        <dt>CPU</dt><dd>${a.cpu != null ? a.cpu.toFixed(1) + "%" : "–"}</dd>
+        <dt>Category</dt><dd>${a.system ? "System / desktop app" : "Developer process"}</dd>
+      </dl>
+
+      ${a.cwd ? `<div class="section-title">Working directory</div>
+      <div class="codebox">${esc(a.cwd)}<button class="btn sm icon ghost copy" data-copy="${esc(a.cwd)}" data-tip="Copy">${icon("copy", 13)}</button></div>` : ""}
+
+      <div class="section-title">Command</div>
+      <div class="codebox">${esc(a.command)}<button class="btn sm icon ghost copy" data-copy="${esc(a.command)}" data-tip="Copy">${icon("copy", 13)}</button></div>
+    </div>
+    <div class="drawer-foot">
+      <a class="btn" href="http://localhost:${a.ports[0].port}" target="_blank" rel="noopener">${icon("ext", 14)} Open :${a.ports[0].port}</a>
+      <div class="spacer"></div>
+      <button class="btn danger" data-action="kill" data-pid="${a.pid}" ${a.self ? "disabled title='Stop the dashboard from your terminal'" : ""}>${icon("stop", 13)} Kill process</button>
+    </div>`;
+  $(".drawer-body", d).scrollTop = scroll;
+}
+
+/* ═════════════ Kill flow ═════════════ */
+function openKillModal(pids) {
+  const apps = pids.map((p) => state.apps.find((a) => a.pid === p)).filter((a) => a && !a.self);
+  if (!apps.length) return;
+  state.modalPids = apps.map((a) => a.pid);
+  const one = apps.length === 1;
+  $("#modal").innerHTML = `
+    <div class="modal-body">
+      <div class="ic bad" style="width:40px;height:40px;border-radius:11px">${icon("stop", 18)}</div>
+      <h3>Stop ${one ? esc(title(apps[0])) : `${apps.length} applications`}?</h3>
+      <p>This frees ${apps.flatMap((a) => a.ports).map((p) => `:${p.port}`).join(", ")}. Unsaved state in ${one ? "this process" : "these processes"} will be lost.</p>
+      <div class="modal-list">${apps.map((a) => `<div><b>${esc(title(a))}</b><span>PID ${a.pid} · ${a.ports.map((p) => ":" + p.port).join(" ")}</span></div>`).join("")}</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn ghost left" data-action="modal-cancel">Cancel</button>
+      <button class="btn danger" data-action="modal-force" data-tip="SIGKILL — immediate, no cleanup.\nUse if it ignores a normal stop.">Force kill</button>
+      <button class="btn danger-solid" data-action="modal-kill" data-tip="SIGTERM — lets the app shut down cleanly">Stop ${one ? "app" : "all"}</button>
+    </div>`;
+  $("#modal").classList.add("open");
+  $("#overlay").classList.add("open");
+  setTimeout(() => $('[data-action="modal-kill"]')?.focus(), 50);
+}
+function closeModal() {
+  state.modalPids = null;
+  hideTip();
+  $("#modal").classList.remove("open");
+  if (!state.drawerPid) $("#overlay").classList.remove("open");
+}
+async function killPids(pids, force) {
+  closeModal();
+  let ok = 0;
+  const errors = [];
+  await Promise.all(pids.map(async (pid) => {
+    const app = state.apps.find((a) => a.pid === pid);
+    try {
+      const res = await fetch("/api/kill", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pid, force }) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      state.killing.set(pid, data.signal);
+      state.selected.delete(pid);
+      ok++;
+    } catch (e) {
+      errors.push(`${app ? title(app) : pid}: ${e.message}`);
+      if (app) logEvent("failed", app, e.message);
+    }
+  }));
+  if (ok) toast(`Sent ${force ? "SIGKILL" : "SIGTERM"} to ${ok} process${ok > 1 ? "es" : ""}`, "ok");
+  errors.forEach((e) => toast(esc(e), "err"));
+  if (ok && pids.includes(state.drawerPid)) closeDrawer();
+  render();
+  setTimeout(load, force ? 300 : 900);
+}
+
+/* ═════════════ Data loading ═════════════ */
+async function load(manual) {
+  if (manual) { const b = $("#refresh"); b.classList.remove("spin"); void b.offsetWidth; b.classList.add("spin"); }
+  try {
+    const res = await fetch("/api/apps");
+    const data = await res.json();
+    trackChanges(data.apps);
+    state.apps = data.apps;
+    state.machine = data.machine;
+    state.at = data.at;
+    state.loaded = true;
+    for (const pid of state.selected) if (!data.apps.some((a) => a.pid === pid)) state.selected.delete(pid);
+    recordSample(data);
+    $("#updated").textContent = `${$("#auto").checked ? "Live · " : ""}updated ${fmtTime(data.at)}`;
+    render();
+  } catch {
+    $("#updated").textContent = "Can't reach the Portside server — is it running?";
+  }
+}
+function trackChanges(apps) {
+  const now = new Map(apps.map((a) => [a.pid, a]));
+  if (state.prev) {
+    for (const [pid, a] of now) if (!state.prev.has(pid)) logEvent("started", a, a.parent ? `started by ${a.parent}` : "");
+    for (const [pid, a] of state.prev) if (!now.has(pid)) {
+      const sig = state.killing.get(pid);
+      logEvent(sig ? "killed" : "stopped", a, sig ? `via dashboard (${sig})` : "exited on its own");
+      state.killing.delete(pid);
+    }
+  }
+  state.prev = now;
+}
+function recordSample(data) {
+  const sum = (list) => list.reduce((n, a) => n + (a.memoryMb || 0), 0);
+  state.history.push({ t: data.at, mem: sum(data.apps.filter((a) => !a.system)), memAll: sum(data.apps) });
+  state.history = state.history.filter((h) => h.t >= data.at - HISTORY_MS);
+  localStorage.setItem("history", JSON.stringify(state.history));
+}
+
+/* ═════════════ UI chrome ═════════════ */
+function toast(html, kind) {
+  const el = document.createElement("div");
+  el.className = `toast ${kind}`;
+  el.innerHTML = `<span style="color:var(--${kind === "ok" ? "green" : "red"});display:flex">${icon(kind === "ok" ? "check" : "alert", 16)}</span><span>${html}</span>`;
+  $("#toasts").appendChild(el);
+  setTimeout(() => { el.classList.add("out"); setTimeout(() => el.remove(), 220); }, 3800);
+}
+const tipEl = $("#tip");
+function hideTip() { tipEl.style.display = "none"; }
+document.addEventListener("mouseover", (e) => {
+  const t = e.target.closest("[data-tip]");
+  if (!t) return hideTip();
+  tipEl.textContent = t.dataset.tip;
+  tipEl.style.display = "block";
+});
+document.addEventListener("mousemove", (e) => {
+  if (tipEl.style.display !== "block") return;
+  const r = tipEl.getBoundingClientRect();
+  tipEl.style.left = `${Math.min(e.clientX + 14, innerWidth - r.width - 8)}px`;
+  tipEl.style.top = `${Math.min(e.clientY + 16, innerHeight - r.height - 8)}px`;
+});
+
+function setTheme(theme, save) {
+  const root = document.documentElement;
+  root.classList.add("theming");
+  root.dataset.theme = theme;
+  if (save) localStorage.setItem("theme", theme);
+  setTimeout(() => root.classList.remove("theming"), 350);
+}
+function setAuto(on) {
+  clearInterval(state.timer);
+  $("#pulse").classList.toggle("paused", !on);
+  let tick = 0;
+  // Every 3 s while visible; every 15 s in a background tab so the activity log keeps recording
+  if (on) state.timer = setInterval(() => { tick++; if (!state.modalPids && (!document.hidden || tick % 5 === 0)) load(); }, 3000);
+}
+function go(view) {
+  state.view = view;
+  if (location.hash !== `#${view}`) history.replaceState(null, "", `#${view}`);
+  document.body.classList.remove("nav-open");
+  render();
+  window.scrollTo(0, 0);
+}
+
+/* Static chrome icons */
+$("#search-ic").outerHTML = icon("search", 15);
+$("#refresh").innerHTML = `${icon("refresh", 14)}<span class="hide-sm">Refresh</span>`;
+$("#theme").innerHTML = `<span class="moon">${icon("moon", 16)}</span><span class="sun">${icon("sun", 16)}</span>`;
+$("#menu").innerHTML = icon("menu", 16);
+$("#sb-toggle").innerHTML = icon("chevL", 15);
+$("#sb-toggle").addEventListener("click", () => setCollapsed(!state.collapsed));
+$("#sys").checked = state.showSystem;
+
+/* ═════════════ Events ═════════════ */
+window.addEventListener("hashchange", () => { const v = location.hash.slice(1); if (VIEWS[v]) go(v); });
+window.addEventListener("resize", () => drawMemChart());
+
+document.addEventListener("click", (e) => {
+  const el = e.target;
+  const act = el.closest("[data-action]");
+  const a = act?.dataset.action;
+
+  if (a === "kill") return openKillModal([Number(act.dataset.pid)]);
+  if (a === "kill-selected") return openKillModal([...state.selected]);
+  if (a === "modal-kill") return killPids(state.modalPids, false);
+  if (a === "modal-force") return killPids(state.modalPids, true);
+  if (a === "modal-cancel") return closeModal();
+  if (a === "details") return openDrawer(Number(act.dataset.pid));
+  if (a === "close-drawer") return closeDrawer();
+  if (a === "clear-sel") { state.selected.clear(); return render(); }
+  if (a === "clear-kind") { state.kind = null; return render(); }
+  if (a === "clear-q") { state.query = ""; $("#q").value = ""; return render(); }
+  if (a === "clear-log") { state.events = []; localStorage.removeItem("events"); return render(); }
+  if (a === "select-all") {
+    const ids = filteredApps().filter((x) => !x.self).map((x) => x.pid);
+    ids.forEach((id) => (el.checked ? state.selected.add(id) : state.selected.delete(id)));
+    return render();
+  }
+
+  const sel = el.closest("[data-select]");
+  if (sel) {
+    const pid = Number(sel.dataset.select);
+    sel.checked ? state.selected.add(pid) : state.selected.delete(pid);
+    return render();
+  }
+  const copy = el.closest("[data-copy]");
+  if (copy) { navigator.clipboard.writeText(copy.dataset.copy).then(() => toast("Copied to clipboard", "ok")); return; }
+
+  const sortTh = el.closest("[data-sort]");
+  if (sortTh) {
+    const k = sortTh.dataset.sort;
+    state.sort = { key: k, dir: state.sort.key === k ? -state.sort.dir : ["memory", "cpu", "uptime"].includes(k) ? -1 : 1 };
+    localStorage.setItem("sort", JSON.stringify(state.sort));
+    return render();
+  }
+  const kindBtn = el.closest("[data-kind]");
+  if (kindBtn) { state.kind = kindBtn.dataset.kind || null; return go("apps"); }
+  const range = el.closest("[data-range]");
+  if (range) { state.range = Number(range.dataset.range); localStorage.setItem("range", state.range); return render(); }
+  const scope = el.closest("[data-scope]");
+  if (scope) { state.portScope = scope.dataset.scope; return render(); }
+
+  if (el.closest("[data-stop]")) return; // links/checkboxes inside clickable rows
+  const row = el.closest("[data-open]");
+  if (row) return openDrawer(Number(row.dataset.open));
+
+  if (el.closest("#overlay")) { if (state.modalPids) closeModal(); else closeDrawer(); }
+  if (el.closest("#menu")) document.body.classList.toggle("nav-open");
+});
+
+$("#q").addEventListener("input", (e) => {
+  state.query = e.target.value;
+  if (state.query && state.view === "overview") return go("apps");
+  render();
+});
+$("#sys").addEventListener("change", (e) => { state.showSystem = e.target.checked; localStorage.setItem("showSystem", e.target.checked ? "1" : "0"); render(); });
+$("#auto").addEventListener("change", (e) => setAuto(e.target.checked));
+$("#refresh").addEventListener("click", () => load(true));
+$("#theme").addEventListener("click", () => setTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light", true));
+matchMedia("(prefers-color-scheme: light)").addEventListener("change", (e) => { if (!localStorage.getItem("theme")) setTheme(e.matches ? "light" : "dark", false); });
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    if (state.modalPids) return closeModal();
+    if (state.drawerPid) return closeDrawer();
+    if (e.target.id === "q") { e.target.value = ""; state.query = ""; e.target.blur(); return render(); }
+    if (state.selected.size) { state.selected.clear(); return render(); }
+  }
+  if (e.target.tagName === "INPUT" || e.metaKey || e.ctrlKey || e.altKey || state.modalPids) return;
+  const k = e.key.toLowerCase();
+  if (k === "/") { e.preventDefault(); $("#q").focus(); }
+  else if (k === "r") load(true);
+  else if (k === "t") $("#theme").click();
+  else if (k === "[") setCollapsed(!state.collapsed);
+  else if (["1", "2", "3", "4"].includes(k)) go(Object.keys(VIEWS)[Number(k) - 1]);
+});
+
+setCollapsed(state.collapsed);
+requestAnimationFrame(() => requestAnimationFrame(() => $("#shell").classList.remove("preload")));
+render();
+load();
+setAuto(true);
+</script>
+</body>
+</html>
